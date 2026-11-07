@@ -11,8 +11,19 @@ An app is for a service whose setup changes little from one user to the next, su
 | [Redis](redis/) | 6379 | Password | `REDIS_PASSWORD` |
 | [MariaDB](mariadb/) | 3306 | Admin password, database | `MARIADB_USER` (`admin`), `MARIADB_PASSWORD`, `MARIADB_DATABASE` |
 | [Prometheus and Grafana](prometheus-and-grafana/) | 80, 3000 | Prometheus password, push password, Grafana password | `PROMETHEUS_USER` (`admin`), `PROMETHEUS_PASSWORD`, `PUSH_USER` (`push`), `PUSH_PASSWORD`, `GRAFANA_USER` (`admin`), `GRAFANA_PASSWORD` |
+| [GitHub Actions Runner](github-runner/) | None | Repository or organization URL, registration token, runner name, extra labels | `GITHUB_URL`, `RUNNER_NAME`, `RUNNER_LABELS` (when given) |
 
 An input that is not `required` may be left blank, and the server generates its value at first boot.
+
+## GitHub Actions Runner
+
+The runner opens no port and needs no password. It connects out to GitHub, so the server must reach the internet over IPv4.
+
+- Its `runner` user has passwordless `sudo` and Docker, as on GitHub-hosted runners, so every job has root on the server. Do not attach it to a public repository: a pull request from a fork can then run code on it.
+- First boot uses the registration token once and then deletes `/etc/one-click/inputs.env`. cloud-init keeps its own copy of the user data, which only root reads. The token expires one hour after GitHub makes it.
+- If registration fails, `/var/log/cloud-init-output.log` gives the reason and the command to register again.
+- Follow the runner with `journalctl -u actions-runner`.
+- Deleting the server leaves an offline runner in GitHub. Remove it under Settings, Actions, Runners.
 
 ## Connecting to an app server
 

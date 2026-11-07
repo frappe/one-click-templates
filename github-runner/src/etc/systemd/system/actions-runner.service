@@ -1,0 +1,20 @@
+# From the runner's bin/actions.runner.service.template, with one fixed name for every VM.
+[Unit]
+Description=GitHub Actions runner
+Wants=network-online.target
+After=network-online.target docker.service
+# Registration writes .runner, so an unregistered runner does not start.
+ConditionPathExists=/opt/actions-runner/.runner
+
+[Service]
+ExecStart=/opt/actions-runner/runsvc.sh
+User=runner
+WorkingDirectory=/opt/actions-runner
+KillMode=process
+KillSignal=SIGTERM
+TimeoutStopSec=5min
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

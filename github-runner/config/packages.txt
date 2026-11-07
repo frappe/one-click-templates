@@ -1,0 +1,18 @@
+# What the runner needs on Ubuntu 24.04, from its bin/installdependencies.sh
+libicu74
+libkrb5-3
+liblttng-ust1t64
+libssl3t64
+zlib1g
+# Tools that most workflows call
+build-essential
+git
+git-lfs
+jq
+sudo
+unzip
+zip
+# Container actions and service containers
+docker.io
+docker-buildx
+docker-compose-v2

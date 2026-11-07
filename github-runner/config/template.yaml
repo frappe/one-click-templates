@@ -1,0 +1,47 @@
+name: github-runner
+title: GitHub Actions Runner
+description: A self-hosted GitHub Actions runner with Docker, which registers with your repository or organization at first boot.
+logo: config/logo.svg
+maintainers:
+  - github: frappe
+base_image:
+  os: Ubuntu
+  os_version: "24.04"
+  minimal: false
+minimum_size:
+  cpu_millicores: 1000
+  memory_mib: 2048
+  disk_mib: 20480
+ports: []
+build:
+  files:
+    - { source: src/etc/, destination: /etc/ }
+    - { source: src/var/, destination: /var/ }
+inputs:
+  - name: github_url
+    label: Repository or organization URL
+    type: string
+    required: true
+    max_length: 200
+    pattern: "https://github\\.com/[A-Za-z0-9-]+(/[A-Za-z0-9._-]+)?"
+    description: Such as https://github.com/frappe for an organization or https://github.com/frappe/frappe for a repository.
+  - name: registration_token
+    label: Registration token
+    type: password
+    required: true
+    max_length: 255
+    pattern: "[A-Za-z0-9_-]+"
+    description: On GitHub, open Settings, Actions, Runners, New self-hosted runner. The token expires one hour after GitHub makes it.
+  - name: runner_name
+    label: Runner name
+    type: string
+    required: false
+    max_length: 64
+    pattern: "[A-Za-z0-9][A-Za-z0-9._-]*"
+    description: Leave blank to use the server's hostname.
+  - name: runner_labels
+    label: Extra labels
+    type: string
+    required: false
+    pattern: "[A-Za-z0-9][A-Za-z0-9._-]*(,[A-Za-z0-9][A-Za-z0-9._-]*)*"
+    description: Comma-separated. GitHub always adds self-hosted, Linux and the architecture, such as X64.
