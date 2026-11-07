@@ -36,7 +36,8 @@ if [ -n "$RUNNER_LABELS" ] && ! [[ $RUNNER_LABELS =~ ^[A-Za-z0-9][A-Za-z0-9._-]*
 	exit 1
 fi
 
-wait_for 120 curl -fsS -o /dev/null https://api.github.com
+# wait_for counts one try a second, so a dropped connection must not hold one try for minutes.
+wait_for 120 curl -fsS --max-time 5 -o /dev/null https://api.github.com
 
 options=(--unattended --url "$GITHUB_URL" --token "$REGISTRATION_TOKEN" --name "$RUNNER_NAME" --work _work)
 [ -n "$RUNNER_LABELS" ] && options+=(--labels "$RUNNER_LABELS")
