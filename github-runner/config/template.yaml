@@ -1,6 +1,7 @@
 name: github-runner
 title: GitHub Actions Runner
 description: A self-hosted GitHub Actions runner with Docker, which registers with your repository or organization at first boot.
+logo: config/logo.svg
 maintainers:
   - github: frappe
 base_image:
