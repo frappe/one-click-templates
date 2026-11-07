@@ -1,0 +1,64 @@
+#!/bin/bash
+# Inputs: GITHUB_URL, REGISTRATION_TOKEN, RUNNER_NAME, RUNNER_LABELS
+set -euo pipefail
+. /usr/local/lib/one-click/lib.sh
+# Central sends the inputs as user data; a VM launched without them falls back to defaults.
+[ -f "$ONE_CLICK_INPUTS" ] && . "$ONE_CLICK_INPUTS"
+
+RUNNER_ROOT=/opt/actions-runner
+
+print_manual_registration() {
+	echo "Register the runner with a new token:"
+	echo "  cd $RUNNER_ROOT && sudo -u runner ./config.sh --url <url> --token <token> && sudo systemctl start actions-runner"
+}
+
+if [ -z "${GITHUB_URL:-}" ] || [ -z "${REGISTRATION_TOKEN:-}" ]; then
+	echo "No URL or registration token was given, so the runner is not registered."
+	print_manual_registration
+	mark_ready
+	exit 0
+fi
+
+RUNNER_NAME=${RUNNER_NAME:-$(hostname -s)}
+RUNNER_LABELS=${RUNNER_LABELS:-}
+
+if ! [[ $GITHUB_URL =~ ^https://github\.com/[A-Za-z0-9-]+(/[A-Za-z0-9._-]+)?$ ]]; then
+	echo "GITHUB_URL must be https://github.com/<owner> or https://github.com/<owner>/<repository>." >&2
+	exit 1
+fi
+# A leading letter or digit keeps config.sh from reading a value as an option.
+if ! [[ $RUNNER_NAME =~ ^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$ ]]; then
+	echo "RUNNER_NAME must start with a letter or digit and contain only letters, digits, dots, hyphens and underscores." >&2
+	exit 1
+fi
+if [ -n "$RUNNER_LABELS" ] && ! [[ $RUNNER_LABELS =~ ^[A-Za-z0-9][A-Za-z0-9._-]*(,[A-Za-z0-9][A-Za-z0-9._-]*)*$ ]]; then
+	echo "RUNNER_LABELS must be a comma-separated list of labels that start with a letter or digit." >&2
+	exit 1
+fi
+
+wait_for 120 curl -fsS -o /dev/null https://api.github.com
+
+options=(--unattended --url "$GITHUB_URL" --token "$REGISTRATION_TOKEN" --name "$RUNNER_NAME" --work _work)
+[ -n "$RUNNER_LABELS" ] && options+=(--labels "$RUNNER_LABELS")
+# config.sh refuses to run as root.
+if ! (cd "$RUNNER_ROOT" && sudo -u runner -H ./config.sh "${options[@]}"); then
+	echo "GitHub refused the registration. The token expires one hour after GitHub makes it, and a runner name must be unused." >&2
+	print_manual_registration >&2
+	exit 1
+fi
+# The token is spent, and everything else is kept in app.env.
+rm -f "$ONE_CLICK_INPUTS"
+
+save_credential GITHUB_URL "$GITHUB_URL"
+save_credential RUNNER_NAME "$RUNNER_NAME"
+[ -n "$RUNNER_LABELS" ] && save_credential RUNNER_LABELS "$RUNNER_LABELS"
+
+systemctl start actions-runner
+
+# Not grep -q: it exits at the first match, and pipefail then reads journalctl's SIGPIPE as a failure.
+runner_listens() {
+	journalctl -b -u actions-runner --no-pager | grep "Listening for Jobs" > /dev/null
+}
+wait_for 120 runner_listens
+
+mark_ready
