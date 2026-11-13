@@ -6,29 +6,17 @@ An app is for a service whose setup changes little from one user to the next, su
 
 ## Apps
 
-| App | Port | Inputs | Settings in `/etc/one-click/app.env` |
-| --- | --- | --- | --- |
-| [Redis](redis/) | 6379 | Password | `REDIS_PASSWORD` |
-| [MariaDB](mariadb/) | 3306 | Admin password, database | `MARIADB_USER` (`admin`), `MARIADB_PASSWORD`, `MARIADB_DATABASE` |
-| [Prometheus and Grafana](prometheus-and-grafana/) | 80, 3000 | Prometheus password, push password, Grafana password | `PROMETHEUS_USER` (`admin`), `PROMETHEUS_PASSWORD`, `PUSH_USER` (`push`), `PUSH_PASSWORD`, `GRAFANA_USER` (`admin`), `GRAFANA_PASSWORD` |
+| App | Port | Guide |
+| --- | --- | --- |
+| [Redis](redis/) | 6379 | [Redis](_docs/redis.md) |
+| [MariaDB](mariadb/) | 3306 | [MariaDB](_docs/mariadb.md) |
+| [Prometheus and Grafana](prometheus-and-grafana/) | 80, 3000 | [Prometheus and Grafana](_docs/prometheus-and-grafana.md) |
 
-An input that is not `required` may be left blank, and the server generates its value at first boot.
+## User guides
 
-## Connecting to an app server
+`_docs/` holds the user guide of each app, and `_docs/index.md` covers what every app shares: first boot, `/etc/one-click/app.env`, and network access. The Frappe Cloud documentation site builds these pages under `/apps/`, at `https://frappe.github.io/central/apps/<name>`. Each app's `documentation` field in `config/template.yaml` holds this URL. Central links to it when a user selects the app, and as **Getting started** on the page of the app server.
 
-Central creates an app server as a normal server. It routes no web address to it and opens no port for it.
-
-- The service listens on every IPv4 and IPv6 address and requires a password.
-- Without a public address, the server is reachable only on the region's private network, at its private IPv6 address. Other servers in the region can reach it there.
-- To connect from outside the region, give the server a public address. If the server's firewall is on, add a rule for the service's port.
-- Read the password over SSH: `sudo cat /etc/one-click/app.env`. The login message says whether first boot has finished.
-
-For example, from another server in the region:
-
-```sh
-redis-cli -h <private IPv6 address> -a "$REDIS_PASSWORD" ping
-mariadb -h <private IPv6 address> -u admin -p
-```
+Write a guide in the format of the documentation site: VitePress Markdown with a `title` and `description` front matter, in ASD-STE100 Simplified Technical English. Link to another page by its site path, such as `/servers/networking`. See the [writing guide](https://github.com/frappe/central/blob/develop/docs/README.md#writing).
 
 ## How an app becomes a running VM
 
@@ -49,6 +37,7 @@ common/                         Shared by every app
   config/template.yaml          build.files copied before an app's own files
   src/
   scripts/900-cleanup.sh        Runs after every app's scripts; makes the disk safe to snapshot
+_docs/                          User guides, built into the Frappe Cloud documentation site
 _template/                      Copy this to start a new app
 <name>/
   config/template.yaml          Manifest (below)
@@ -66,6 +55,7 @@ name: mariadb                   # Folder name; lowercase letters, digits and hyp
 title: MariaDB
 description: One line shown in Central.
 logo: config/logo.svg           # Optional SVG inside the app folder, at most 32 KiB; Central shows a generic logo without it
+documentation: https://frappe.github.io/central/apps/mariadb   # The app's guide, built from _docs/<name>.md
 maintainers:
   - github: frappe
 base_image:                     # Atlas system image tags Cargo boots the build on
