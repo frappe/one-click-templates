@@ -1,6 +1,7 @@
 name: example
 title: Example
 description: One line shown in Central.
+documentation: https://frappe.github.io/central/apps/example
 maintainers:
   - github: your-github-handle
 base_image:

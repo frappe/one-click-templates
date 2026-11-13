@@ -5,4 +5,5 @@ if [ -f /var/lib/one-click/ready ]; then
 else
 	echo "Setup is still running. Follow it with: tail -f /var/log/cloud-init-output.log"
 fi
+echo "Guide: https://frappe.github.io/central/apps/"
 echo
